@@ -1,3 +1,5 @@
-# Ignoring the 'accesskey.txt' file which stores the accesskey for the Unsplash API
+# 'accesskey.txt' file stores the accesskey for the Unsplash API
 accesskey.txt
+
+# './Wallpapers/ contains the downloaded wallpapers'
 Wallpapers/
