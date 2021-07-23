@@ -4,17 +4,20 @@ import requests
 import os
 import sys
 import re
+import ctypes
 from datetime import datetime
+
 
 from requests.exceptions import HTTPError
 
 
-def saveWallpaper(wallpaper_url: str, wallpaper_id: str) -> None:
+def saveWallpaper(wallpaper_url: str, wallpaper_id: str) -> str:
+    # Fetches the raw wallpaper from the API response and stores it as a 'jpeg' under ./Wallpapers
 
     timestamp = datetime.today().strftime("%Y_%m_%d_%H-%m")
     wallpaper_name = f"{wallpaper_id}_{timestamp}.jpeg"
 
-    # Checking for a folder named 'Wallpapers' in current directory and creating it if it doesn't exist
+    # Creating a folder named 'Wallpapers' under current directory if it doesn't exist
     if not os.path.isdir('Wallpapers'):
         os.mkdir('Wallpapers')
 
@@ -22,11 +25,19 @@ def saveWallpaper(wallpaper_url: str, wallpaper_id: str) -> None:
 
     res = requests.get(wallpaper_url)
 
+    # Saving the wallpaper as - '<id>_<timestamp>.jpeg'
     with open(wallpaper_name, 'wb') as file:
         file.write(res.content)
 
+    return os.path.abspath(wallpaper_name)
 
-    # Reading the Accesskey from the file
+
+def changeWallpaper(wallpaper_path: str) -> None:
+    # Updates the Wallpaper to the absolute image path passed as an argument
+    ctypes.windll.user32.SystemParametersInfoW(20, 0, wallpaper_path, 0)
+
+
+# Reading the Accesskey from the file
 try:
     with open("accesskey.txt", "r") as file:
         ACCESSKEY = file.readline().strip()
@@ -60,4 +71,6 @@ else:
 wallpaper_url = r['urls']['raw']
 wallpaper_id = ''.join(re.findall('[a-zA-Z]+', r['id']))
 
-saveWallpaper(wallpaper_url, wallpaper_id)
+wallpaper_path = saveWallpaper(wallpaper_url, wallpaper_id)
+
+changeWallpaper(wallpaper_path)
