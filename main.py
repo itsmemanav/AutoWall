@@ -23,6 +23,9 @@ def saveWallpaper(wallpaper_url: str, wallpaper_id: str) -> str:
 
     os.chdir('Wallpapers')
 
+    # Before saving wallpaper, check if cleanup is required.
+    cleanUp()
+
     res = requests.get(wallpaper_url)
 
     # Saving the wallpaper as - '<id>_<timestamp>.jpeg'
@@ -37,40 +40,56 @@ def changeWallpaper(wallpaper_path: str) -> None:
     ctypes.windll.user32.SystemParametersInfoW(20, 0, wallpaper_path, 0)
 
 
-# Reading the Accesskey from the file
-try:
-    with open("accesskey.txt", "r") as file:
-        ACCESSKEY = file.readline().strip()
-except FileNotFoundError as fnf_error:
-    sys.exit(fnf_error)
+def getTimeStamp(filename):
+    modification_time = os.path.getmtime(filename)
+    return datetime.fromtimestamp(modification_time)
 
 
-URL = "https://api.unsplash.com/photos/random"
+def cleanUp() -> None:
+    # Perform cleanup if number of saved wallpapers exceeded 5.
+    if len(os.listdir()) >= 5:
+        oldest_file = min(os.listdir(), key=getTimeStamp)
+        os.remove(oldest_file)
 
-params = {'query': 'wanderlust',
-          'orientation': 'landscape', 'w': '1920', 'h': '1080'}
 
-headers = {'Authorization': f"Client-ID {ACCESSKEY}"}
+def main() -> None:
+
+    # Reading the Accesskey from the file
+    try:
+        with open("accesskey.txt", "r") as file:
+            ACCESSKEY = file.readline().strip()
+    except FileNotFoundError as fnf_error:
+        sys.exit(fnf_error)
+
+    URL = "https://api.unsplash.com/photos/random"
+
+    params = {'query': 'nature',
+              'orientation': 'landscape', 'w': '1920', 'h': '1080'}
+
+    headers = {'Authorization': f"Client-ID {ACCESSKEY}"}
+
+    # Sending request to Unsplash API and parsing response as JSON
+    try:
+        res = requests.get(URL, headers=headers, params=params)
+
+        res.raise_for_status()
+
+    except HTTPError as http_error:
+        sys.exit(http_error)
+
+    except Exception as err:
+        print(f'Error: {err}')
+
+    else:
+        r = res.json()
+
+    wallpaper_url = r['urls']['raw']
+    wallpaper_id = ''.join(re.findall('[a-zA-Z]+', r['id']))
+
+    wallpaper_path = saveWallpaper(wallpaper_url, wallpaper_id)
+
+    changeWallpaper(wallpaper_path)
 
 
-# Sending request to Unsplash API and parsing response as JSON
-try:
-    res = requests.get(URL, headers=headers, params=params)
-
-    res.raise_for_status()
-
-except HTTPError as http_error:
-    sys.exit(http_error)
-
-except Exception as err:
-    print(f'Error: {err}')
-
-else:
-    r = res.json()
-
-wallpaper_url = r['urls']['raw']
-wallpaper_id = ''.join(re.findall('[a-zA-Z]+', r['id']))
-
-wallpaper_path = saveWallpaper(wallpaper_url, wallpaper_id)
-
-changeWallpaper(wallpaper_path)
+if __name__ == "__main__":
+    main()
