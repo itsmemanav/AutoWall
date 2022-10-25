@@ -59,6 +59,7 @@ def main() -> None:
         with open("accesskey.txt", "r") as file:
             ACCESSKEY = file.readline().strip()
     except FileNotFoundError as fnf_error:
+        print("Error: You need an accesskey in order to access the Unsplash API. Please refer the README.md file for more details.")
         sys.exit(fnf_error)
 
     URL = "https://api.unsplash.com/photos/random"
@@ -84,7 +85,7 @@ def main() -> None:
         r = res.json()
 
     wallpaper_url = r['urls']['raw']
-    wallpaper_id = ''.join(re.findall('[a-zA-Z]+', r['id']))
+    wallpaper_id = ''.join(re.findall('[a-zA-Z0-9]+', r['id']))
 
     wallpaper_path = saveWallpaper(wallpaper_url, wallpaper_id)
 
